@@ -13,11 +13,11 @@ class TwitSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Twit
-        fields = ['text', 'date_modified']
+        fields = ['user', 'text', 'date_modified']
 
 
 class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = ['text']
+        fields = ['twit', 'text', 'date_modified']
