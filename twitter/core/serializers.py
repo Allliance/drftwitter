@@ -6,7 +6,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['name', 'username']
+        fields = ['id', 'name', 'username']
 
 
 class TwitSerializer(serializers.ModelSerializer):

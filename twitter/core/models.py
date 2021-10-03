@@ -1,12 +1,17 @@
 from django.db import models
+from django.contrib.auth.models import AbstractUser
 import datetime
 
 
-class User(models.Model):
+class User(AbstractUser):
+    username = models.CharField(max_length=50, blank=False, unique=True)
+    name = models.CharField(max_length=100, blank=False)
     date_created = models.DateField(auto_now_add=True)
     date_modified = models.DateField(auto_now_add=True)
-    name = models.CharField(max_length=100, blank=False)
-    username = models.CharField(max_length=100)
+
+    USERNAME_FIELD = 'username'
+    EMAIL_FIELD = None
+    REQUIRED_FIELDS = ['name']
 
     def save(self, *args, **kwargs):
         self.date_modified = datetime.date.today()
