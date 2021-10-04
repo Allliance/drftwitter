@@ -77,7 +77,8 @@ class Twit(models.Model):
 class Comment(models.Model):
     date_created = models.DateField(auto_now_add=True)
     date_modified = models.DateField(auto_now_add=True)
-    twit = models.ForeignKey(Twit, on_delete=models.CASCADE, blank=False, null=False)
+    twit = models.ForeignKey(Twit, on_delete=models.CASCADE, related_name='comments')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments')
     text = models.TextField(max_length=50, blank=False)
 
     class Meta:

@@ -2,19 +2,19 @@ from rest_framework import permissions
 from rest_framework.authtoken.models import Token
 
 
-class IsNewUserOrReadOnly(permissions.BasePermission):
+class IsUserOrPosting(permissions.BasePermission):
 
     def has_permission(self, request, view):
+        if request.method == 'POST':
+            return True
         try:
             user = Token.objects.get(key=request.headers.get('token')).user
         except Token.DoesNotExist:
             return False
-        if request.method == 'POST' or user:
-            return True
-        return False
+        return user is not None
 
 
-class IsUserOrReadOnly(permissions.BasePermission):
+class IsUser(permissions.BasePermission):
 
     def has_permission(self, request, view):
         try:
@@ -22,6 +22,9 @@ class IsUserOrReadOnly(permissions.BasePermission):
         except Token.DoesNotExist:
             return False
         return user is not None
+
+
+class IsUserOrReadOnly(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         if request.method in permissions.SAFE_METHODS:
@@ -31,4 +34,5 @@ class IsUserOrReadOnly(permissions.BasePermission):
         except Token.DoesNotExist:
             return False
         return user == obj.user
+
 

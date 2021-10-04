@@ -3,11 +3,10 @@ from .models import User, Twit, Comment
 
 
 class UserSerializer(serializers.ModelSerializer):
-    twits = serializers.PrimaryKeyRelatedField(many=True, queryset=Twit.objects.all())
 
     class Meta:
         model = User
-        fields = ('username', 'name', 'date_joined', 'date_modified', 'twits')
+        fields = ('username', 'name', 'date_joined', 'date_modified')
 
 
 class TwitSerializer(serializers.ModelSerializer):
@@ -19,7 +18,9 @@ class TwitSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
+    user = serializers.ReadOnlyField(source="user.username")
+    twit = serializers.ReadOnlyField(source="twit.id")
 
     class Meta:
         model = Comment
-        fields = ['twit', 'text', 'date_modified']
+        fields = ('id', 'text', 'user', 'twit', 'date_modified')
