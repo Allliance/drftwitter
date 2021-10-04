@@ -31,6 +31,7 @@ class User(AbstractBaseUser):
     username = models.CharField(max_length=30, blank=False, unique=True)
     name = models.CharField(max_length=100, blank=False)
     date_joined = models.DateTimeField(verbose_name='date joined', auto_now_add=True)
+    date_modified = models.DateTimeField(verbose_name='date modified', auto_now_add=True)
     last_login = models.DateField(auto_now=True)
     is_admin = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
@@ -49,23 +50,18 @@ class User(AbstractBaseUser):
         return True
 
     def save(self, *args, **kwargs):
-        self.date_modified = datetime.date.today()
+        self.date_modified = datetime.datetime.today()
         super(User, self).save(*args, **kwargs)
 
     def __str__(self):
         return self.name
 
 
-@receiver(post_save, sender=settings.AUTH_USER_MODEL)
-def create_auth_token(sender, instance=None, created=False, **kwargs):
-    if created:
-        Token.objects.create(user=instance)
-
 class Twit(models.Model):
     date_created = models.DateField(auto_now_add=True)
     date_modified = models.DateField(auto_now_add=True)
     text = models.TextField(max_length=100, blank=False)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, blank=False, null=False)
+    user = models.ForeignKey(User, related_name='twits', on_delete=models.CASCADE)
 
     class Meta:
         ordering = ['date_created']
