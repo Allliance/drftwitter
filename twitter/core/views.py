@@ -14,12 +14,27 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.parsers import JSONParser
 
 
-def get_user_by_token(request):
+def get_user_by_jwt_token(request):
+    decoded_jwt = decode_jwt(request.headers.get('jwt'))
+    user_id = decoded_jwt.get('user_id')
+    if user_id:
+        try:
+            return User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return None
+    return None
+
+
+def get_user_by_token(request, look_for_jwt=True):
     try:
         return Token.objects.get(key=request.headers.get('token')).user
     except Token.DoesNotExist:
-        print("fuck")
-        raise exceptions.PermissionDenied
+        if not look_for_jwt:
+            raise exceptions.PermissionDenied
+        user = get_user_by_jwt_token(request)
+        if user is None:
+            raise exceptions.PermissionDenied
+        return user
 
 
 def get_user_by_username(username):
@@ -94,8 +109,7 @@ class TwitDetailsView(generics.RetrieveUpdateDestroyAPIView):
 
 class NewTwitView(generics.CreateAPIView):
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsUser,
-                          TwitPermissions]
+    permission_classes = [TwitPermissions]
     queryset = Twit.objects.all()
     serializer_class = TwitSerializer
 
@@ -136,7 +150,7 @@ class TokenView(APIView):
 
     def post(self, request):
         serializer = JWTTokenPermissionSerializer(JSONParser().parse(request))
-        token = RefreshToken.for_user(user=get_user_by_token(request))
+        token = RefreshToken.for_user(get_user_by_token(request, False))
         token = serializer.merge_to_token(token)
         return Response({
             'jwt': str(token)

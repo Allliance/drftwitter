@@ -1,0 +1,73 @@
+jwt permissions:
+delete_user
+change_name
+post_twit
+edit_twit
+delete_twit
+post_comment
+----------------------------
+create user:
+commands : curl http://127.0.0.1:8000/user/ -i -X POST -d "username=admin&name=admin" -o result
+
+HTTP/1.1 201 Created
+token: 00a44d0bc68bb9e3b3bf13535cf1cfc0217ef3ec
+
+{"username":"admin","name":"admin"}
+------------------------------
+change username:
+curl http://127.0.0.1:8000/user/ -i -X PUT -d "username=admin&name=ali" -o result -H "token: 00a44d0bc68bb9e3b3bf13535cf1cfc0217ef3ec"
+
+HTTP/1.1 200 OK
+
+{"username":"admin","name":"ali","date_joined":"2021-10-06T18:35:56.156348Z","date_modified":"2021-10-06T19:14:25.158084Z"}
+------------------------------
+post twit:
+curl http://127.0.0.1:8000/twit/ -i -X POST -d "text=hello world" -o result -H "token: 00a44d0bc68bb9e3b3bf13535cf1cfc0217ef3ec"
+result : HTTP/1.1 201 Created
+
+{"id":1,"text":"hello world","comments":[]}
+------------------------------
+edit twit:
+curl http://127.0.0.1:8000/twit/1/ -i -X PUT -d "text=hello worldssssss" -o result -H "token: 00a44d0bc68bb9e3b3bf13535cf1cfc0217ef3ec"
+
+HTTP/1.1 200 OK
+
+{"id":1,"text":"hello worldssssss","comments":[]}
+------------------------------
+delete post:
+curl http://127.0.0.1:8000/twit/4/ -i -X DELETE -o result -H "token: 00a44d0bc68bb9e3b3bf13535cf1cfc0217ef3ec"
+
+HTTP/1.1 204 No Content
+------------------------------
+post comment:
+curl http://127.0.0.1:8000/twit/3/comment/ -i -X POST -d "text=Your Oppinion" -o result -H "token: 00a44d0bc68bb9e3b3bf13535cf1cfc0217ef3ec"
+
+HTTP/1.1 201 Created
+
+{"id":1,"text":"My Oppinion","user":"admin","twit":3,"date_created":"2021-10-06T19:30:18.458537Z"}
+------------------------------
+twits by some user:
+curl http://127.0.0.1:8000/user/admin/
+
+...
+------------------------------
+comments on a twit:
+curl http://127.0.0.1:8000/twit/3/
+
+
+{"id":3,"text":"hello","comments":[{"id":1,"text":"My Oppinion","user":"admin","twit":3,"date_created":"2021-10-06T19:30:18.458537Z"},{"id":2,"text":"Nobody cares about your Oppinion","user":"admin","twit":3,"date_created":"2021-10-06T19:31:24.574959Z"}]}
+------------------------------
+all twits and comments:
+curl http://127.0.0.1:8000/data/
+
+.....
+------------------------------
+jwt token:
+curl http://127.0.0.1:8000/token/ -i -X POST -d '{"delete_twit": "true", "post_twit": "true"}' -H "token: 00a44d0bc68bb9e3b3bf13535cf1cfc0217ef3ec"
+
+HTTP/1.1 200 OK
+
+{"jwt":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTYzMzYzODQ1NiwianRpIjoiMWZmY2U3N2Y3YzBiNDI0ZTgyMmJlZDQ0ZWExOTk4OTIiLCJ1c2VyX2lkIjoxLCJkZWxldGVfdXNlciI6ZmFsc2UsImNoYW5nZV9uYW1lIjpmYWxzZSwicG9zdF90d2l0IjoidHJ1ZSIsImVkaXRfdHdpdCI6ZmFsc2UsImRlbGV0ZV90d2l0IjoidHJ1ZSIsInBvc3RfY29tbWVudCI6ZmFsc2V9.AzgtUwSL4_BrP4ez__PE13JNayvPXynFnQcB7ulB4Vw"}
+-------------------------------
+posting twit using jwt token and not normal token:
+curl http://127.0.0.1:8000/twit/ -i -X POST -d "text=this twit has been posted by a third-party" -H "jwt: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTYzMzYzODQ1NiwianRpIjoiMWZmY2U3N2Y3YzBiNDI0ZTgyMmJlZDQ0ZWExOTk4OTIiLCJ1c2VyX2lkIjoxLCJkZWxldGVfdXNlciI6ZmFsc2UsImNoYW5nZV9uYW1lIjpmYWxzZSwicG9zdF90d2l0IjoidHJ1ZSIsImVkaXRfdHdpdCI6ZmFsc2UsImRlbGV0ZV90d2l0IjoidHJ1ZSIsInBvc3RfY29tbWVudCI6ZmFsc2V9.AzgtUwSL4_BrP4ez__PE13JNayvPXynFnQcB7ulB4Vw"

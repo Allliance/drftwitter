@@ -20,10 +20,12 @@ class IsUser(permissions.BasePermission):
 class TwitPermissions(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        if request.method == 'GET':
+        if request.method == 'GET' or validate_user_token(request):
             return True
         try:
             user_permissions = decode_jwt(request.headers.get('jwt'))
+            if user_permissions is None:
+                return False
         except jwt.exceptions.DecodeError:
             return False
         if request.method == 'POST':
@@ -38,10 +40,12 @@ class TwitPermissions(permissions.BasePermission):
 class UserPermissions(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        if request.method in ['GET', 'POST']:
+        if request.method in ['GET', 'POST'] or validate_user_token(request):
             return True
         try:
             user_permissions = decode_jwt(request.headers.get('jwt'))
+            if user_permissions is None:
+                return False
         except jwt.exceptions.DecodeError:
             return False
         if request.method == 'PUT':
@@ -57,7 +61,9 @@ class CommentPermissions(permissions.BasePermission):
         if request.method == 'POST':
             try:
                 user_permissions = decode_jwt(request.headers.get('jwt'))
+                if user_permissions is None:
+                    return False
             except jwt.exceptions.DecodeError:
                 return False
-            return user_permissions.get('post_comment') is True and validate_user_token(request)
+            return user_permissions.get('post_comment') is True or validate_user_token(request)
         return True

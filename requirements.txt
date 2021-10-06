@@ -1,4 +1,4 @@
 django
 djangorestframework
 djangorestframework-simplejwt
-jwt
+pyjwt
