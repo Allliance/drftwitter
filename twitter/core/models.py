@@ -58,16 +58,16 @@ class User(AbstractBaseUser):
 
 
 class Twit(models.Model):
-    date_created = models.DateField(auto_now_add=True)
-    date_modified = models.DateField(auto_now_add=True)
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_modified = models.DateTimeField(auto_now_add=True)
     text = models.TextField(max_length=100, blank=False)
     user = models.ForeignKey(User, related_name='twits', on_delete=models.CASCADE)
 
     class Meta:
-        ordering = ['date_created']
+        ordering = ['date_modified']
 
     def save(self, *args, **kwargs):
-        self.date_modified = datetime.date.today()
+        self.date_modified = datetime.datetime.today()
         super(Twit, self).save(*args, **kwargs)
 
     def __str__(self):
@@ -75,8 +75,8 @@ class Twit(models.Model):
 
 
 class Comment(models.Model):
-    date_created = models.DateField(auto_now_add=True)
-    date_modified = models.DateField(auto_now_add=True)
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_modified = models.DateTimeField(auto_now_add=True)
     twit = models.ForeignKey(Twit, on_delete=models.CASCADE, related_name='comments')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments')
     text = models.TextField(max_length=50, blank=False)
@@ -85,7 +85,7 @@ class Comment(models.Model):
         ordering = ['date_created']
 
     def save(self, *args, **kwargs):
-        self.date_modified = datetime.date.today()
+        self.date_modified = datetime.datetime.today()
         super(Comment, self).save(*args, **kwargs)
 
     def __str__(self):

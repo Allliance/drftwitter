@@ -1,4 +1,3 @@
-import django.core.exceptions
 from rest_framework import generics
 from django import http
 from rest_framework.views import APIView
@@ -9,8 +8,10 @@ from rest_framework import status
 from .models import User, Twit, Comment
 from django.contrib.auth import authenticate, login
 from rest_framework.authentication import TokenAuthentication
-from .permissions import IsUserOrPosting, IsUserOrReadOnly, IsUser
-from .serializers import UserSerializer, TwitSerializer, CommentSerializer
+from .permissions import IsUser, UserPermissions, TwitPermissions, CommentPermissions
+from .serializers import UserSerializer, TwitSerializer, CommentSerializer, JWTTokenPermissionSerializer, decode_jwt
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.parsers import JSONParser
 
 
 def get_user_by_token(request):
@@ -35,9 +36,14 @@ def get_twit_by_id(twit_id):
         raise http.Http404
 
 
+class DataView(generics.ListAPIView):
+    queryset = Twit.objects.all()
+    serializer_class = TwitSerializer
+
+
 class UserView(APIView):
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsUserOrPosting]
+    permission_classes = [UserPermissions]
 
     def delete(self, request):
         user = get_user_by_token(request)
@@ -77,13 +83,9 @@ class TwitDetailsView(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = 'id'
     lookup_url_kwarg = 'twit_id'
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsUserOrReadOnly]
+    permission_classes = [TwitPermissions]
     queryset = Twit.objects.all()
     serializer_class = TwitSerializer
-
-    def get(self, request, *args, **kwargs):
-        print('dafuck')
-        return self.retrieve(request, args, kwargs)
 
     def perform_create(self, serializer):
         user = get_user_by_token(self.request)
@@ -92,7 +94,8 @@ class TwitDetailsView(generics.RetrieveUpdateDestroyAPIView):
 
 class NewTwitView(generics.CreateAPIView):
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsUser]
+    permission_classes = [IsUser,
+                          TwitPermissions]
     queryset = Twit.objects.all()
     serializer_class = TwitSerializer
 
@@ -103,7 +106,7 @@ class NewTwitView(generics.CreateAPIView):
 
 class CommentView(generics.ListCreateAPIView):
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsUserOrReadOnly]
+    permission_classes = [CommentPermissions]
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     twit = None
@@ -120,4 +123,22 @@ class CommentView(generics.ListCreateAPIView):
     def get(self, request, *args, **kwargs):
         self.queryset = Comment.objects.filter(twit=get_twit_by_id(kwargs['twit_id']))
         return self.list(request, args, kwargs)
+
+
+class TokenView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsUser]
+
+    def get(self, request):
+        if request.headers.get('jwt') is None:
+            return Response("No jwt token found", status=status.HTTP_400_BAD_REQUEST)
+        return Response(decode_jwt(request.headers.get('jwt')))
+
+    def post(self, request):
+        serializer = JWTTokenPermissionSerializer(JSONParser().parse(request))
+        token = RefreshToken.for_user(user=get_user_by_token(request))
+        token = serializer.merge_to_token(token)
+        return Response({
+            'jwt': str(token)
+        }, status=status.HTTP_200_OK)
 
