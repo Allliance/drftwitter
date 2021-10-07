@@ -21,6 +21,6 @@ def cache_data(id, data, exp_time=300):
     if REDIS_DATABASE is None:
         initialize()
         return None
-    # REDIS_DATABASE.setex(id, exp_time, data)
+    REDIS_DATABASE.setex(id, exp_time, data)
 
 
