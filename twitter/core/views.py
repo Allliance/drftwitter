@@ -12,6 +12,8 @@ from .permissions import IsUser, UserPermissions, TwitPermissions, CommentPermis
 from .serializers import UserSerializer, TwitSerializer, CommentSerializer, JWTTokenPermissionSerializer, decode_jwt
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.parsers import JSONParser
+from .redis_cache import cache_data, get_user_data
+import json
 
 
 def get_user_by_jwt_token(request):
@@ -51,9 +53,15 @@ def get_twit_by_id(twit_id):
         raise http.Http404
 
 
-class DataView(generics.ListAPIView):
-    queryset = Twit.objects.all()
-    serializer_class = TwitSerializer
+class DataView(APIView):
+
+    def get(self, request):
+        cached_data = get_user_data('###')
+        if cached_data:
+            return http.HttpResponse(cached_data, content_type='application/json')
+        data = json.dumps([dict(twit) for twit in TwitSerializer(Twit.objects.all(), many=True).data])
+        cache_data('###', data)
+        return http.HttpResponse(data, content_type='application/json')
 
 
 class UserView(APIView):
@@ -86,12 +94,16 @@ class UserView(APIView):
         return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class UserTwitsView(generics.ListAPIView):
-    serializer_class = TwitSerializer
+class UserTwitsView(APIView):
 
-    def get(self, request, *args, **kwargs):
-        self.queryset = Twit.objects.filter(user=get_user_by_username(kwargs['username']))
-        return self.list(request, args, kwargs)
+    def get(self, request, username):
+        cached_data = get_user_data(username)
+        if cached_data:
+            return http.HttpResponse(cached_data, content_type='application/json')
+        data = json.dumps([dict(twit) for twit in
+                           TwitSerializer(Twit.objects.filter(user=get_user_by_username(username)), many=True).data])
+        cache_data(username, data)
+        return http.HttpResponse(data, content_type='application/json')
 
 
 class TwitDetailsView(generics.RetrieveUpdateDestroyAPIView):
@@ -105,6 +117,14 @@ class TwitDetailsView(generics.RetrieveUpdateDestroyAPIView):
     def perform_create(self, serializer):
         user = get_user_by_token(self.request)
         serializer.save(user=user)
+
+    def retrieve(self, request, *args, **kwargs):
+        cached_data = get_user_data('#{twit_id}#'.format(twit_id=kwargs['twit_id']))
+        if cached_data:
+            return http.HttpResponse(cached_data, content_type='application/json')
+        data = json.dumps(dict(TwitSerializer(get_twit_by_id(kwargs['twit_id'])).data))
+        cache_data('#{twit_id}#'.format(twit_id=kwargs['twit_id']), data)
+        return http.HttpResponse(data, content_type='application/json')
 
 
 class NewTwitView(generics.CreateAPIView):
