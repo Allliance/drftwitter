@@ -3,6 +3,7 @@ from .models import User, Twit, Comment
 import jwt
 from django.conf import settings
 
+
 class UserSerializer(serializers.ModelSerializer):
 
     class Meta:

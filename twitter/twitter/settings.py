@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
-
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -27,6 +27,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+LOGGING_PATH = Path.home().joinpath('bin').joinpath('drf_twitter').joinpath("logs")
+if not LOGGING_PATH.exists():
+    os.makedirs(str(LOGGING_PATH))
+DEBUG_LOG_FILE_PATH = LOGGING_PATH.joinpath('debug.log')
+APP_LOG_FILE_PATH = LOGGING_PATH.joinpath('app.log')
 # Application definition
 
 INSTALLED_APPS = [
@@ -81,6 +86,45 @@ TEMPLATES = [
         },
     },
 ]
+
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': True,
+    'formatters': {
+        'simple': {
+            'format': '%(levelname)s\n%(asctime)s\nfrom: %(module)s - %(funcName)s\n%(message)s\n-----------------',
+            'style': '%',
+        }
+    },
+    'handlers': {
+        'debug_level_handler': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': str(DEBUG_LOG_FILE_PATH),
+            'formatter': 'simple',
+        },
+        'info_level_handler': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': str(APP_LOG_FILE_PATH),
+            'formatter': 'simple',
+        }
+    },
+    'loggers': {
+        'views': {
+            'handlers': ['debug_level_handler', 'info_level_handler'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'permissions': {
+            'handlers': ['debug_level_handler', 'info_level_handler'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}
+
 
 WSGI_APPLICATION = 'twitter.wsgi.application'
 

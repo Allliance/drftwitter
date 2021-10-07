@@ -1,13 +1,18 @@
 import jwt.exceptions
+import logging
 from rest_framework import permissions
 from rest_framework.authtoken.models import Token
 from .serializers import decode_jwt
 
+logger = logging.Logger('permissions')
+
 
 def validate_user_token(request):
+    logger.info("validating user with normal token")
     try:
         return Token.objects.get(key=request.headers.get('token')).user is not None
     except Token.DoesNotExist:
+        logger.error("token is not valid")
         return False
 
 
@@ -25,8 +30,10 @@ class TwitPermissions(permissions.BasePermission):
         try:
             user_permissions = decode_jwt(request.headers.get('jwt'))
             if user_permissions is None:
+                logger.warning("No valid jwt token found")
                 return False
         except jwt.exceptions.DecodeError:
+            logger.error("Error while decoding jwt token")
             return False
         if request.method == 'POST':
             return user_permissions.get('post_twit')
@@ -45,8 +52,10 @@ class UserPermissions(permissions.BasePermission):
         try:
             user_permissions = decode_jwt(request.headers.get('jwt'))
             if user_permissions is None:
+                logger.warning("No valid jwt token found")
                 return False
         except jwt.exceptions.DecodeError:
+            logger.error("Error while decoding jwt token")
             return False
         if request.method == 'PUT':
             return user_permissions.get('change_name')
@@ -62,8 +71,10 @@ class CommentPermissions(permissions.BasePermission):
             try:
                 user_permissions = decode_jwt(request.headers.get('jwt'))
                 if user_permissions is None:
+                    logger.warning("No valid jwt token found")
                     return False
             except jwt.exceptions.DecodeError:
+                logger.error("Error while decoding jwt token")
                 return False
             return user_permissions.get('post_comment') is True or validate_user_token(request)
         return True
